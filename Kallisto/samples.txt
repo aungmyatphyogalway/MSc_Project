@@ -1,0 +1,16 @@
+row,state,condition,replicate
+D_CON1,disease,control,1
+D_CON2,disease,control,2
+D_CON3,disease,control,3
+D_TREAT1,disease,treatment,1
+D_TREAT2,disease,treatment,2
+D_TREAT3,disease,treatment,3
+H_CON1,healthy,control,1
+H_CON2,healthy,control,2
+H_CON3,healthy,control,3
+H_CYTKN1.healthy,control,1
+H_CYTKN2,healthy,control,2
+H_CYTKN3,healthy,control,3
+H_TREAT1,healthy,treatment,1
+H_TREAT2,healthy,treatment,2
+H_TREAT3,healthy,treatment,3

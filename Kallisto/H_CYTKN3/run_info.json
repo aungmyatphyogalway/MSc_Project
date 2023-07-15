@@ -1,0 +1,13 @@
+{
+	"n_targets": 205541,
+	"n_bootstraps": 0,
+	"n_processed": 38867427,
+	"n_pseudoaligned": 34673620,
+	"n_unique": 8658980,
+	"p_pseudoaligned": 89.2,
+	"p_unique": 22.3,
+	"kallisto_version": "0.44.0",
+	"index_version": 10,
+	"start_time": "Wed May 10 12:37:41 2023",
+	"call": "kallisto quant -i GRCh38.idx -o H_CYTKN3 --bias -t 2 ../trimmed_fastqc/H_CYTKN3_val_1.fq.gz ../trimmed_fastqc/H_CYTKN3_val_2.fq.gz"
+}

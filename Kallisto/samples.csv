@@ -1,0 +1,16 @@
+row,,condition,replicate
+D_CON1,,Degenerated_control,1
+D_CON2,,Degenerated_control,2
+D_CON3,,Degenerated_control,3
+D_TREAT1,,Degenerated_treated,1
+D_TREAT2,,Degenerated_treated,2
+D_TREAT3,,Degenerated_treated,3
+H_CON1,,Healthy_control,1
+H_CON2,,Healthy_control,2
+H_CON3,,Healthy_control,3
+H_CYTKN1,,Healthy_cytokine,1
+H_CYTKN2,,Healthy_cytokine,2
+H_CYTKN3,,Healthy_cytokine,3
+H_TREAT1,,Healthy_treated,1
+H_TREAT2,,Healthy_treated,2
+H_TREAT3,,Healthy_treated,3

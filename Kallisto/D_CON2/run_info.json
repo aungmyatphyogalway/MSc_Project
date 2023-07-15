@@ -1,0 +1,13 @@
+{
+	"n_targets": 205541,
+	"n_bootstraps": 0,
+	"n_processed": 36412508,
+	"n_pseudoaligned": 32266106,
+	"n_unique": 8192659,
+	"p_pseudoaligned": 88.6,
+	"p_unique": 22.5,
+	"kallisto_version": "0.44.0",
+	"index_version": 10,
+	"start_time": "Wed May 10 11:16:57 2023",
+	"call": "kallisto quant -i GRCh38.idx -o D_CON2 --bias -t 2 ../trimmed_fastqc/D_CON2_val_1.fq.gz ../trimmed_fastqc/D_CON2_val_2.fq.gz"
+}

@@ -1,0 +1,930 @@
+---
+title: "Disease_Control Vs Healthy_Control"
+author: "aungmyatphyo"
+date: "2023-05-11"
+output: html_document
+---
+Required Package
+```{R, message=F, warning=F}
+library(dplyr)
+library(biomaRt)
+library(tximport)
+library(rhdf5)
+library(gplots)
+library(org.Hs.eg.db)
+library(DESeq2)
+library(DT)
+library(apeglm)
+library(RColorBrewer)
+library(IHW)
+library(PCAtools)
+library(pheatmap)
+library(clusterProfiler)
+library(EnhancedVolcano)
+#library(ComplexHeatmap)
+library(clusterProfiler)
+library(circlize)
+library(fgsea)
+library(tidyverse)
+library(ggpubr)
+library(vsn)
+library(hexbin)
+library(ggnewscale)
+library(pathview)
+library(ReactomePA)
+```
+
+```{r}
+setwd("~/Downloads")
+```
+
+Directory
+```{r, message=F, warning=F}
+# path where your extracted the tar.gz folder to.
+# strip the trailing '/'
+quant_dir <- "/Users/aungphyo/Downloads/Kallisto"
+list.files(quant_dir)
+```
+
+Metadata
+```{R}
+samples <- read.csv(paste0(quant_dir, "/samples.csv"), header=T, row.names = "row", stringsAsFactors = T)
+samples
+```
+
+Convert numeric to factor
+```{R, message=F, warning=F}
+samples$replicate <- factor(samples$replicate)
+
+# check its ok:
+sapply(samples, is.factor)
+```
+
+Stage Kallisto Files
+```{R, message=F, warning=F}
+files <- file.path(quant_dir, rownames(samples), "abundance.h5")
+names(files) <- paste0(rownames(samples))
+files
+```
+
+BiomaRT Ensembl
+```{R, warning=F, message=F}
+mart <- useMart(biomart = "ensembl", dataset = "hsapiens_gene_ensembl")
+```
+
+Transcript to gene
+```{R, message=F, warning=F}
+## show how to identify attribute type
+# $ head /data/github/quant/ctrl_1/abundance.tsv
+
+## show how to query mart
+listAttributes(mart)
+
+tx2gene <- getBM(attributes = c("ensembl_transcript_id_version", "hgnc_symbol"), mart = mart, useCache = FALSE)
+
+head(tx2gene)
+```
+
+TXI object
+```{R, message=F, warning=F}
+txi <- tximport(files, type = "kallisto", tx2gene = tx2gene)
+head(txi$counts)
+```
+
+Beware 
+DDS object
+```{R, message=F, warning=F}
+dds <- DESeqDataSetFromTximport(txi, colData = samples, design = ~ replicate + condition )
+```
+
+
+Start to change case by case
+Relevel
+```{R, message=F, warning=F}
+
+
+dds$condition <- relevel(dds$condition, ref = "Healthy_control")
+dds <- DESeq(dds)
+resultsNames(dds)
+
+
+```
+
+extract counts
+```{R, message=F, warning=F}
+counts <- counts(dds, normalized=TRUE)
+```
+
+transform counts
+```{R, message=F, warning=F}
+## DESeq2 is weird about extracting transformations as a matrix - you must use `assay()` 
+log2 <- assay(normTransform(dds))
+rld <- assay(rlog(dds))
+```
+
+
+
+```{R, meassage=F, warning=F}
+
+## x-axis is the transformed mean not the raw mean..
+
+log2_plt <- meanSdPlot(log2, ranks=FALSE, plot=FALSE)
+log2_plt$gg + ggtitle("Log2 + PC Transformation") + xlim(0,20)
+
+rld_plt <- meanSdPlot(rld, ranks=FALSE, plot=FALSE)
+rld_plt$gg + ggtitle("Rlog Transformation") + xlim(0,20)
+```
+
+
+Sample heatmap
+```{r}
+rld <- assay(rlog(dds))
+sampleDists <- dist(t(rld))
+
+## Place distances in matrix
+sampleDistMatrix <- as.matrix(sampleDists)
+
+## Optional, remove colnames
+colnames(sampleDistMatrix) <- NULL
+
+## create annotation dataframe
+ann <- data.frame(Condition = samples$condition)
+
+col <- c("blue", "red1")
+names(col) <- c("treatment", "control")
+ann_col <- list(Condition = col)
+
+## match annotation rownames to distance mat
+rownames(ann) <- rownames(sampleDistMatrix)
+
+pheatmap(mat=sampleDistMatrix,
+         ## pass distance metric calculated to heatmap
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         ## pass annotation dataframe 
+         ## add colors
+         #annotation_colors = ann_col,
+         ## heatmap colours
+         col=hcl.colors(100,"GnBu",rev=T))
+```
+
+
+PCA
+```{R, message=F,warning=F, fig.width=7, fig.height=5}
+p <- pca(rld, metadata = samples)
+
+biplot(p,
+       colby = 'condition',
+       colkey = c('healthy_treatment'='royalblue', 'healthy_control'='red1',
+                  'healthy_cytokine' = 'forestgreen', 'disease_control' = 'purple',
+                  'disease_treatment' = 'gold'),
+       ellipse = T,
+       hline = 0,
+       vline = 0,
+       legendPosition = 'right',
+       legendLabSize = 12,
+       legendIconSize = 8.0,
+       title = 'PCA bi-plot',
+       subtitle = 'PC1 versus PC2')
+```
+
+DESeq
+```{R, message=F, warning=F}
+# make healthy_control vs healthy_treatment
+d_con_vs_h_con <- results(dds, filterFun=ihw, alpha=0.05, c("condition", "Degenerated_control", "Healthy_control"))
+res_con_con <- lfcShrink(dds=dds, res=d_con_vs_h_con, coef=4, type="apeglm")
+summary(res_con_con)
+
+# make melanoma vs control object
+#h_con_v_h_treat <- results(dds, filterFun=ihw, alpha=0.05, c("condition", "healthy_treatment", "healthy_control"))
+#res2 <- lfcShrink(dds=dds, res=h_con_v_h_treat, coef=7, type="apeglm")
+#summary(res2)
+```
+
+```{r,fig.width=7}
+x=as.data.frame(res_con_con)
+x$gene=rownames(x)
+#d <- plotCounts(dds, gene="RPS3", intgroup = "condition", returnData = T)
+plotCounts(dds, gene="LAMC2", intgroup = "condition", returnData = F)
+```
+function
+```{r}
+#resdf<- as.data.frame(res)
+get_upregulated <- function(df){
+
+	key <- intersect(rownames(df)[which(df$log2FoldChange>=1)], rownames(df)[which(df$padj<=0.05)])
+
+    results <- as.data.frame((df)[which(rownames(df) %in% key),])
+	return(results)
+}
+
+get_downregulated <- function(df){
+
+  	key <- intersect(rownames(df)[which(df$log2FoldChange<=-1)],rownames(df)[which(df$padj<=0.05)])
+
+  	results <- as.data.frame((df)[which(rownames(df) %in% key),])
+  	return(results)
+}
+
+de_up_con_con<- get_upregulated(as.data.frame(res_con_con))
+de_up_con_con
+
+de_down_con_con <- get_downregulated(as.data.frame(res_con_con))
+de_down_con_con
+```
+
+```{r, fig.height=5, fig.width=6}
+## remove NA values from results
+library(EnhancedVolcano)
+res <- results(dds, alpha=0.05, c('condition','Degenerated_control','Healthy_control'))
+res1 <- na.omit(res)
+
+## calculate min/max axis values for plot (optional)
+min_width <- min(res1$log2FoldChange)
+max_width <- max(res1$log2FoldChange)
+max_height <- -log10(min(res1[res1$pvalue>0, 5]))
+
+## Grab top 10 up-reg genes for plot
+up <- subset(res1, res1$log2FoldChange > 1 & res1$pvalue <= 0.05)
+up <- up[order(-up$log2FoldChange),]
+up_list <- head(rownames(up), n=10L)
+
+## Grab top 10 down-reg genes for plot
+down <- subset(res1, res1$log2FoldChange < -1 & res1$pvalue <= 0.05)
+down <- down[order(down$log2FoldChange),]
+down_list <- head(rownames(down), n=10L)
+
+## place top 20 DE genes in vector (optinal...)
+plot_top_20 <- c(up_list, down_list)
+plot_top_20
+pdf("~/Desktop/D_CON_HCON_volano.pdf",width=5, height=5)
+EnhancedVolcano(res1,
+                lab=NA,
+          		x="log2FoldChange",
+          		y="pvalue",
+          		selectLab=plot_top_20,
+          		drawConnectors=TRUE,
+          		legendPosition = "none",
+          		FCcutoff=1.0,
+          		pCutoff=0.05,
+          		pointSize = 1.3,
+          		title="",
+          		subtitle="",
+          		caption = NA,
+          		xlim=c(-10, 10),
+          		ylim=c(0, max_height))
+dev.off()
+```
+
+
+
+
+
+
+```{R, message=F, warning=F}
+# without apeglm - not shrinkage
+plotMA(d_con_vs_h_con, ylim=c(-10,10))
+
+# with shrinkage estimator - keep this plot
+plotMA(res1, ylim=c(-10,12))
+```
+
+heatmap
+```{r, fig.height=4}
+
+# index must match samples you qre plotting
+subset <- rld[, c(1,2,3,7,8,9)]
+
+# now select de_up, de_down, i.e DE genes that passed the filtering our function produced
+up <- rownames(de_up_con_con)
+down <- rownames(de_down_con_con)
+
+# subset matrix to include only DE genes
+key <- c(up, down)
+subset <- subset[which(rownames(subset) %in% key),]
+
+# scale and center the values
+mat <- as.matrix(scale(t(subset), center = T))
+
+# basic plot to check we're plotting something sensible
+#pheatmap(t(mat))
+
+# spruce it up a bit..
+ann <- data.frame(Condition = c(rep("Disease_control", 3), rep("Healthy_control", 3)))
+rownames(ann) <- rownames(mat)
+col <- c("forestgreen","blue")
+names(col) <- c("Disease_control", "Healthy_control")
+ann_col <- list(Condition = col)
+
+#pheatmap(t(mat), 
+         #show_rownames = TRUE,
+         #annotation_col = ann,
+         #annotation_colors = ann_col,
+         #labels_row = FALSE, # figure out remove row labels
+         #color = hcl.colors(100, "PRGn",rev=F))
+```
+Top20
+```{r,fig.height=7}
+subset <- rld[,c(1,2,3,7,8,9)]
+
+# now select de_up, de_down, i.e DE genes that passed the filtering our function produced
+up <- rownames(de_up_con_con)
+down <- rownames(de_down_con_con)
+
+# subset matrix to include only DE genes
+key <- c(up, down)
+subset <- subset[which(rownames(subset) %in% key),]
+
+mat <- t(subset)
+mat <- scale(mat, center=T, scale=T)
+mat <- t(mat)
+mat <- na.omit(mat)
+#plot_top_20<-c(up_list,down_list)
+#top_genes <- mat[which(rownames(mat) %in% plot_top_20),]
+
+
+# make group 
+#rownames(ann) == rownames(top_genes)
+
+#pheatmap::pheatmap(top_genes,
+                   #show_rownames = T,
+                   #annotation_col = ann,
+                   #annotation_colors = ann_col,
+                   #color=hcl.colors(100, 'PRGn',rev=F))
+
+ComplexHeatmap::pheatmap(mat,
+                        show_rownames = T,
+                        annotation_col = ann,
+                        annotation_colors = ann_col,
+                        legend = TRUE,
+                       heatmap_legend_param =list(title="z-score",at=c (-1.5,-1,-0.5,0,0.5,1,1.5)),
+        color=hcl.colors(100, 'PRGn',rev=F))
+
+
+ComplexHeatmap::pheatmap(mat,
+                        show_rownames = T,
+                        annotation_col = ann,
+                        annotation_colors = ann_col,
+                        legend = TRUE,
+                       heatmap_legend_param =list(title="z-score",at=c (-1.5,-1,-0.5,0,0.5,1,1.5)),
+        color=hcl.colors(100, 'PRGn',rev=F))
+```
+
+
+
+
+### Read GMT file
+```{R, message=F, warning=F}
+# read in gmt file
+pathway <- gmtPathways("/Users/aungphyo/Downloads/c5.all.v2023.1.Hs.symbols.gmt.txt")
+head(pathway, 1)
+```
+
+### Create ranked gene list
+Extract the gene names and associated log2FoldChanges from our healthy cytokine vs healthy control study to generate a ranked gene list.
+```{r, message=F, warning=F}
+## convert result object to dataframe
+res <- as.data.frame(res1)
+res$hgnc_symbol <- rownames(res)
+
+# compute summary stat
+fgsea_rank <- res %>%
+              dplyr::select(hgnc_symbol, log2FoldChange) %>%
+              na.omit() %>%
+              distinct() %>%
+              group_by(hgnc_symbol) %>%
+              summarize(log2foldchange=mean(log2FoldChange))
+
+fgsea_rank
+```
+
+### Convert to a named list
+```{r}
+rank <- deframe(fgsea_rank)
+head(rank, 20)
+```
+
+### Run fgsea
+```{R, message=F, warning=F}
+# run fgsea
+fgsea <- fgsea(pathways=pathway, stats=rank, nperm=7000)
+
+fgseaResTidy <- fgsea %>%
+  as_tibble() %>%
+  arrange(desc(NES))
+
+# Show in a nice table:
+fgseaResTidy %>%
+  dplyr::select(-leadingEdge, -ES, -nMoreExtreme) %>%
+  arrange(padj) %>%
+  DT::datatable()
+```
+
+
+```{r}
+a<-p.adjust(fgseaResTidynew$pval,method="fdr")
+fgseaResTidynew<-cbind(fgseaResTidynew,a)
+```
+
+
+
+
+Cluster Profiler of GO 
+```{r}
+df <- as.data.frame(res1)
+df$hgnc_symbol <- rownames(df)
+info <- getBM(attributes=c("hgnc_symbol",
+                           "entrezgene_id"),
+                  filters = c("hgnc_symbol"),
+                  values = df$hgnc_symbol,
+                  mart = mart,
+                  useCache=FALSE)
+tmp <- merge(df, info, by="hgnc_symbol")
+
+# subset the dataframe to include only stat sig genes
+tmp <- tmp[tmp$padj < 0.05,]
+```
+```{r}
+OrgDb <- org.Hs.eg.db
+
+geneList <- as.vector(tmp$log2FoldChange)
+names(geneList) <- as.character(tmp$entrezgene_id)
+gene <- na.omit(as.character(tmp$entrezgene_id))
+gene_list<-sort(geneList,decreasing = TRUE)
+
+# GO over-representation test
+ego <- clusterProfiler::enrichGO(gene          = gene,
+                                 OrgDb         = OrgDb,
+                                 ont           = "ALL",
+                                 pAdjustMethod = "BH",
+                                 pvalueCutoff  = 0.05,
+                                 qvalueCutoff  = 0.01,
+                                 readable      = TRUE)
+summary(ego)
+head(summary(ego))
+#GO gene set enrichment test
+#ego3 <- gseGO(geneList     = gene_list,
+             # OrgDb        = OrgDb,
+             # ont          = "ALL",
+             # minGSSize    = 100,
+             # maxGSSize    = 500,
+             # pvalueCutoff = 0.05,
+             # verbose      = FALSE,
+             # by="fgsea")
+#summary(ego3)
+```
+```{r}
+y<-as.data.frame(ego)
+fdr<-p.adjust(y$pvalue,method = "fdr")
+y<-cbind(y,fdr)
+```
+
+```{r,fig.height=7}
+dotplot(ego,showCategory=20,font.size=10)
+```
+
+```{r, fig.height=2, fig.width=6}
+subset <- ego[ego$Count ==18, asis=TRUE]
+cnetplot(subset, foldChange=geneList)
+
+#subset <- ego[ego$Count==21, asis=TRUE]
+#gen<-ego[ego$Count==21, asis=TRUE]
+```
+
+
+### Enrichment plots
+I will show you can example of a pathway enriched in our lung samples, and a pathway that is enriched in Control (i.e negative NES score)
+
+
+```{r}
+filtered_pathway <- subset(fgsea, NES > 1.9)
+
+filt_p <- as.vector(filtered_pathway$pathway)
+
+for (i in filt_p){
+    plt <- plotEnrichment(pathway = pathway[[i]],
+    gseaParam = 1, ticksSize = 0.5, stats= rank) +
+    labs(title=i) + theme(plot.title = element_text(hjust = 0.5, face="bold"))
+    print(plt)
+}
+```
+
+
+
+```{r}
+go_bp_skeletal = subset(fgsea, fgsea$pathway=="GOBP_REGULATION_OF_SKELETAL_MUSCLE_TISSUE_DEVELOPMENT")
+go_bp_skeletal = unlist(go_bp_skeletal$leadingEdge)
+
+
+subset <- rld[go_bp_skeletal, c(7,8,9,1,2,3)]
+
+# scale and center the values
+mat <- as.matrix(scale(t(subset), center = T))
+
+# basic plot to check we're plotting something sensible
+#pheatmap(t(mat))
+
+# spruce it up a bit..
+ann <- data.frame(Condition = c(rep("Healthy_control", 3), rep("Disease_control", 3)))
+rownames(ann) <- rownames(mat)
+col <- c( "blue","forestgreen")
+names(col) <- c("Healthy_control","Disease_control")
+ann_col <- list(Condition = col)
+
+
+
+ComplexHeatmap::pheatmap(t(mat),
+                        show_rownames = T,
+                        annotation_col = ann,
+                        annotation_colors = ann_col,
+                        main = "GOBP_MUSCLE_HYPERTROPHY",
+                        labels_row = rownames(subset),
+                        fontsize = 6,
+                        legend = TRUE,
+                       heatmap_legend_param =list(title="z-score",at=c (-1.5,-1,-0.5,0,0.5,1,1.5)),
+        color=hcl.colors(100, 'PRGn',rev=F))
+
+
+```
+
+KEGG
+```{R, message=F, warning=F}
+# read in gmt file
+pathway_kegg <- gmtPathways("/Users/aungphyo/Downloads/c2.cp.kegg.v2023.1.Hs.symbols.gmt.txt")
+head(pathway, 1)
+```
+
+```{r, message=F, warning=F}
+## convert result object to dataframe
+res <- as.data.frame(res1)
+res$hgnc_symbol <- rownames(res)
+
+
+# compute summary stat
+fgsea_rank <- res %>%
+              dplyr::select(hgnc_symbol, log2FoldChange) %>%
+              na.omit() %>%
+              distinct() %>%
+              group_by(hgnc_symbol) %>%
+              summarize(log2foldchange=mean(log2FoldChange))
+
+fgsea_rank
+```
+
+
+# create named list
+```{r}
+rank <- deframe(fgsea_rank)
+head(rank, 20)
+```
+
+```{R, message=F, warning=F}
+# run fgsea
+fgsea_kegg<- fgsea(pathways=pathway_kegg, stats=rank, nperm=7000)
+
+fgseaResTidy_kegg <- fgsea_kegg %>%
+  as_tibble() %>%
+  arrange(desc(NES))
+
+# Show in a nice table:
+fgseaResTidy_kegg %>%
+  dplyr::select(-leadingEdge, -ES, -nMoreExtreme) %>%
+  arrange(padj) %>%
+  DT::datatable()
+```
+
+
+Cluster Profiler of KEGG Analysis
+```{r}
+df <- as.data.frame(res1)
+df$hgnc_symbol <- rownames(df)
+info <- getBM(attributes=c("hgnc_symbol",
+                           "entrezgene_id"),
+                  filters = c("hgnc_symbol"),
+                  values = df$hgnc_symbol,
+                  mart = mart,
+                  useCache=FALSE)
+tmp <- merge(df, info, by="hgnc_symbol")
+
+# subset the dataframe to include only stat sig genes
+tmp <- tmp[tmp$pvalue < 0.05,]
+```
+
+```{r}
+OrgDb <- org.Hs.eg.db
+
+geneList <- as.vector(tmp$log2FoldChange)
+names(geneList) <- as.character(tmp$entrezgene_id)
+gene <- na.omit(as.character(tmp$entrezgene_id))
+gene_list<-sort(geneList,decreasing = TRUE)
+gene_list
+
+#gene_ids <- bitr(tmp, fromType = tmp$hgnc_symbol, toType =tmp$entrezgene_id, OrgDb = org.Hs.eg.db)
+
+# GO over-representation test
+
+ego <- clusterProfiler::enrichKEGG(gene= gene,                                                                              organism = 'hsa',
+                                   keyType = "kegg",
+                                   pvalueCutoff  = 0.05,
+                                   qvalueCutoff  = 0.01)
+
+#egoKEGG<-gseKEGG(geneList = gene_list,
+              #organism="hsa",
+              #keyType = "kegg",
+              #pvalueCutoff = 0.05,
+             # pAdjustMethod = "BH")
+#summary(egoKEGG)
+summary(ego)
+head(summary(ego))
+```
+
+```{r}
+browseKEGG(ego,'hsa05012')
+```
+
+```{r}
+hsa05012 <- pathview(gene.data  = gene_list,
+                     pathway.id = "hsa05012",
+                     species    = "hsa",
+                     limit      = list(gene=max(abs(gene_list)), cpd=1))
+hsa05012
+```
+
+```{r}
+dotplot(ego,x="GeneRatio",showCategory=20,font.size=6)
+#dotplot(egoKEGG,x="GeneRatio",showCategory=20,font.size=6)
+```
+
+```{r,fig.width=8, fig.height=8}
+#subset <- ego[ego$Count>=5, asis=T]
+#cnetplot(ego, foldChange=geneList)
+```
+
+```{r}
+filtered_pathway <- subset(fgsea_kegg, NES < -1.6)
+
+filt_p <- as.vector(filtered_pathway$pathway)
+
+for (i in filt_p){
+    plt <- plotEnrichment(pathway = pathway_kegg[[i]],
+    gseaParam = 1, ticksSize = 0.5, stats= rank) +
+    labs(title=i) + theme(plot.title = element_text(hjust = 0.5, face="bold"))
+    print(plt)
+}
+```
+
+```{r,fig.height=8, fig.width=7}
+kegg_arachidonic = subset(fgsea_kegg, fgsea_kegg$pathway=="KEGG_RIBOSOME")
+kegg_arachidonic = unlist(kegg_arachidonic$leadingEdge)
+
+
+subset <- rld[kegg_arachidonic, c(7,8,9,1,2,3)]
+
+# scale and center the values
+mat <- as.matrix(scale(t(subset), center = T))
+
+# basic plot to check we're plotting something sensible
+#pheatmap(t(mat))
+
+# spruce it up a bit..
+ann <- data.frame(Condition = c(rep("Healthy_control", 3), rep("Disease_control", 3)))
+rownames(ann) <- rownames(mat)
+col <- c( "blue","forestgreen")
+names(col) <- c("Healthy_control","Disease_control")
+ann_col <- list(Condition = col)
+
+
+
+ComplexHeatmap::pheatmap(t(mat),
+                        show_rownames = T,
+                        annotation_col = ann,
+                        annotation_colors = ann_col,
+                        main = "KEGG_RIBOSOME",
+                        labels_row = rownames(subset),
+                        fontsize = 6,
+                        legend = TRUE,
+                       heatmap_legend_param =list(title="z-score",at=c (-1.5,-1,-0.5,0,0.5,1,1.5)),
+        color=hcl.colors(100, 'PRGn',rev=F))
+
+
+```
+
+
+Reactome
+```{R, message=F, warning=F}
+# read in gmt file
+pathway_reactome <- gmtPathways("/Users/aungphyo/Downloads/c2.cp.reactome.v2023.1.Hs.symbols.gmt.txt")
+head(pathway, 1)
+```
+
+```{r, message=F, warning=F}
+## convert result object to dataframe
+res <- as.data.frame(res1)
+res$hgnc_symbol <- rownames(res)
+
+# compute summary stat
+fgsea_rank <- res %>%
+              dplyr::select(hgnc_symbol, log2FoldChange) %>%
+              na.omit() %>%
+              distinct() %>%
+              group_by(hgnc_symbol) %>%
+              summarize(log2foldchange=mean(log2FoldChange))
+
+fgsea_rank
+```
+
+```{r}
+rank <- deframe(fgsea_rank)
+head(rank, 20)
+```
+
+```{R, message=F, warning=F}
+# run fgsea
+fgsea_reactome <- fgsea(pathways=pathway_reactome, stats=rank, nperm=7000)
+
+fgseaResTidy_reactome <- fgsea_reactome %>%
+  as_tibble() %>%
+  arrange(desc(NES))
+
+# Show in a nice table:
+fgseaResTidy_reactome %>%
+  dplyr::select(-leadingEdge, -ES, -nMoreExtreme) %>%
+  arrange(padj) %>%
+  DT::datatable()
+```
+
+Cluster Profiler of Reactome
+```{r}
+df <- as.data.frame(res1)
+df$hgnc_symbol <- rownames(df)
+info <- getBM(attributes=c("hgnc_symbol",
+                           "entrezgene_id"),
+                  filters = c("hgnc_symbol"),
+                  values = df$hgnc_symbol,
+                  mart = mart,
+                  useCache=FALSE)
+tmp <- merge(df, info, by="hgnc_symbol")
+
+# subset the dataframe to include only stat sig genes
+tmp <- tmp[tmp$padj < 0.05,]
+```
+
+```{r}
+OrgDb <- org.Hs.eg.db
+
+geneList <- as.vector(tmp$log2FoldChange)
+names(geneList) <- as.character(tmp$entrezgene_id)
+gene <- na.omit(as.character(tmp$entrezgene_id))
+gene_list<-sort(geneList,decreasing = TRUE)
+
+#gene_ids <- bitr(tmp, fromType = tmp$hgnc_symbol, toType =tmp$entrezgene_id, OrgDb = org.Hs.eg.db)
+
+# Reactome over-representation test
+ego <- enrichPathway(gene= gene,                                                                        organism = 'human',
+                pvalueCutoff  = 0.05,
+                qvalueCutoff  = 0.01)
+summary(ego)
+head(summary(ego))
+
+#Reactome gene set enrichment test
+#ego_reactome<-gsePathway(geneList = gene_list,
+                         #organism = 'human',
+                         #pvalueCutoff = 0.05,
+                         #pAdjustMethod = "BH")
+
+#summary(ego_reactome)
+```
+
+```{r}
+dotplot(ego,x="GeneRatio",showCategory=20,font.size=6)
+#dotplot(ego_reactome,x="GeneRatio",showCategory=20,font.size=6)
+```
+```{r,fig.width=8, fig.height=8}
+#subset <- ego[ego$Count>=10, asis=T]
+#cnetplot(ego,categorySize="geneNum",foldChange=geneList)
+```
+
+Enrichment plot
+```{r}
+filtered_pathway <- subset(fgsea_reactome, NES < -1.8)
+
+filt_p <- as.vector(filtered_pathway$pathway)
+
+for (i in filt_p){
+    plt <- plotEnrichment(pathway = pathway_reactome[[i]],
+    gseaParam = 1, ticksSize = 0.5, stats= rank) +
+    labs(title=i) + theme(plot.title = element_text(hjust = 0.5, face="bold"))
+    print(plt)
+}
+```
+
+```{r}
+reactome_CD28 = subset(fgsea_reactome, fgsea_reactome$pathway=="REACTOME_ASSEMBLY_OF_COLLAGEN_FIBRILS_AND_OTHER_MULTIMERIC_STRUCTURES")
+reactome_CD28 = unlist(reactome_CD28$leadingEdge)
+
+
+subset <- rld[reactome_CD28, c(7,8,9,1,2,3)]
+
+# scale and center the values
+mat <- as.matrix(scale(t(subset), center = T))
+
+# basic plot to check we're plotting something sensible
+#pheatmap(t(mat))
+
+# spruce it up a bit..
+ann <- data.frame(Condition = c(rep("Healthy_control", 3), rep("Disease_control", 3)))
+rownames(ann) <- rownames(mat)
+col <- c( "blue","forestgreen")
+names(col) <- c("Healthy_control","Disease_control")
+ann_col <- list(Condition = col)
+
+
+
+ComplexHeatmap::pheatmap(t(mat),
+                        show_rownames = T,
+                        annotation_col = ann,
+                        annotation_colors = ann_col,
+                        main = "REACTOME_ASSEMBLY_OF_COLLAGEN_FIBRILS_AND_OTHER_MULTIMERIC_STRUCTURES",
+                        labels_row = rownames(subset),
+                        fontsize = 6,
+                        legend = TRUE,
+                       heatmap_legend_param =list(title="z-score",at=c (-1.5,-1,-0.5,0,0.5,1,1.5)),
+        color=hcl.colors(100, 'PRGn',rev=F))
+
+
+```
+
+
+
+```{r}
+reactome_platelet = subset(fgsea_reactome, fgsea_reactome$pathway=="REACTOME_SARS_COV_1_MODULATES_HOST_TRANSLATION_MACHINERY")
+reactome_platelet = unlist(reactome_platelet$leadingEdge)
+
+
+subset <- rld[reactome_platelet, c(7,8,9,1,2,3)]
+
+# scale and center the values
+mat <- as.matrix(scale(t(subset), center = T))
+
+# basic plot to check we're plotting something sensible
+#pheatmap(t(mat))
+
+# spruce it up a bit..
+ann <- data.frame(Condition = c(rep("Healthy_control", 3), rep("Disease_control", 3)))
+rownames(ann) <- rownames(mat)
+col <- c( "blue","forestgreen")
+names(col) <- c("Healthy_control","Disease_control")
+ann_col <- list(Condition = col)
+
+
+
+ComplexHeatmap::pheatmap(t(mat),
+                        show_rownames = T,
+                        annotation_col = ann,
+                        annotation_colors = ann_col,
+                        main = "REACTOME_SARS_COV_1_MODULATES_HOST_TRANSLATION_MACHINERY",
+                        labels_row = rownames(subset),
+                        fontsize = 6,
+                        legend = TRUE,
+                       heatmap_legend_param =list(title="z-score",at=c (-1.5,-1,-0.5,0,0.5,1,1.5)),
+        color=hcl.colors(100, 'PRGn',rev=F))
+
+
+```
+
+
+```{r,fig.height=4, fig.width=6}
+reactome_ECM = subset(fgsea_reactome, fgsea_reactome$pathway=="REACTOME_EXTRACELLULAR_MATRIX_ORGANIZATION")
+reactome_ECM = unlist(reactome_ECM$leadingEdge)
+
+
+subset <- rld[reactome_ECM, c(7,8,9,1,2,3)]
+
+# scale and center the values
+mat <- as.matrix(scale(t(subset), center = T))
+
+# basic plot to check we're plotting something sensible
+#pheatmap(t(mat))
+
+# spruce it up a bit..
+ann <- data.frame(Condition = c(rep("Healthy_control", 3), rep("Disease_control", 3)))
+rownames(ann) <- rownames(mat)
+col <- c( "blue","forestgreen")
+names(col) <- c("Healthy_control","Disease_control")
+ann_col <- list(Condition = col)
+
+
+
+ComplexHeatmap::pheatmap(t(mat),
+                        show_rownames = T,
+                        annotation_col = ann,
+                        annotation_colors = ann_col,
+                        main = "REACTOME_EXTRACELLULAR_MATRIX_ORGANIZATION",
+                        labels_row = rownames(subset),
+                        fontsize = 6,
+                        legend = TRUE,
+                       heatmap_legend_param =list(title="z-score",at=c (-1.5,-1,-0.5,0,0.5,1,1.5)),
+        color=hcl.colors(100, 'PRGn',rev=F))
+
+
+```

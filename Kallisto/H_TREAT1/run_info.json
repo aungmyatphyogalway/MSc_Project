@@ -1,0 +1,13 @@
+{
+	"n_targets": 205541,
+	"n_bootstraps": 0,
+	"n_processed": 33620090,
+	"n_pseudoaligned": 29616814,
+	"n_unique": 7297035,
+	"p_pseudoaligned": 88.1,
+	"p_unique": 21.7,
+	"kallisto_version": "0.44.0",
+	"index_version": 10,
+	"start_time": "Wed May 10 12:44:49 2023",
+	"call": "kallisto quant -i GRCh38.idx -o H_TREAT1 --bias -t 2 ../trimmed_fastqc/H_TREAT1_val_1.fq.gz ../trimmed_fastqc/H_TREAT1_val_2.fq.gz"
+}

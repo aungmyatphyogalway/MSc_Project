@@ -1,0 +1,53 @@
+[2023-05-08 15:59:39,615] multiqc                                            [DEBUG  ]  No MultiQC config found: /home/localuser/anaconda3/envs/week1/lib/python2.7/site-packages/multiqc-1.0.dev0-py2.7.egg/multiqc_config.yaml
+[2023-05-08 15:59:39,615] multiqc                                            [DEBUG  ]  No MultiQC config found: /home/localuser/.multiqc_config.yaml
+[2023-05-08 15:59:39,615] multiqc                                            [DEBUG  ]  No MultiQC config found: multiqc_config.yaml
+[2023-05-08 15:59:39,615] multiqc                                            [DEBUG  ]  Command used: /home/localuser/anaconda3/envs/week1/bin/multiqc /media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata -n reads -o fastqcdata
+[2023-05-08 15:59:39,615] multiqc                                            [DEBUG  ]  Could not connect to multiqc.info for version check
+[2023-05-08 15:59:39,615] multiqc                                            [INFO   ]  This is MultiQC v1.0.dev0
+[2023-05-08 15:59:39,615] multiqc                                            [DEBUG  ]  Command     : /home/localuser/anaconda3/envs/week1/bin/multiqc /media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata -n reads -o fastqcdata
+[2023-05-08 15:59:39,615] multiqc                                            [DEBUG  ]  Working dir : /media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw
+[2023-05-08 15:59:39,615] multiqc                                            [INFO   ]  Template    : default
+[2023-05-08 15:59:39,615] multiqc                                            [INFO   ]  Searching '/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata'
+[2023-05-08 15:59:39,615] multiqc                                            [DEBUG  ]  Analysing modules: custom_content, peddy, methylQA, qualimap, preseq, quast, rseqc, busco, goleft_indexcov, snpeff, gatk, htseq, bcftools, featureCounts, picard, prokka, samblaster, samtools, bamtools, bismark, hicup, salmon, kallisto, slamdunk, star, tophat, bowtie2, bowtie1, cutadapt, trimmomatic, skewer, fastq_screen, fastqc, clusterflow
+[2023-05-08 15:59:39,615] multiqc                                            [DEBUG  ]  Using temporary directory for creating report: /tmp/tmpPze3mS
+[2023-05-08 15:59:39,813] multiqc.modules.custom_content.custom_content      [DEBUG  ]  No custom content found
+[2023-05-08 15:59:39,818] multiqc.modules.peddy.peddy                        [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:39,820] multiqc.modules.methylQA.methylQA                  [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:39,821] multiqc.modules.qualimap.QM_BamQC                  [DEBUG  ]  Using default Qualimap thresholds: 1, 5, 10, 30, 50
+[2023-05-08 15:59:39,827] multiqc.modules.qualimap.qualimap                  [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:41,453] multiqc.modules.preseq.preseq                      [DEBUG  ]  Could not find any preseq data in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:41,468] multiqc.modules.quast.quast                        [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:41,583] multiqc.modules.rseqc.rseqc                        [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:41,585] multiqc.modules.busco.busco                        [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:41,588] multiqc.modules.goleft_indexcov.goleft_indexcov    [DEBUG  ]  Did not find goleft indexcov outputs in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:41,615] multiqc.modules.snpeff.snpeff                      [DEBUG  ]  Could not find any data in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:41,643] multiqc.modules.gatk.gatk                          [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:41,670] multiqc.modules.htseq.htseq                        [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:41,696] multiqc.modules.bcftools.bcftools                  [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:41,698] multiqc.modules.featureCounts.feature_counts       [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:41,959] multiqc.modules.picard.picard                      [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:41,966] multiqc.modules.prokka.prokka                      [DEBUG  ]  Could not find any Prokka data in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:41,992] multiqc.modules.samblaster.samblaster              [DEBUG  ]  Could not find any data in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:42,072] multiqc.modules.samtools.samtools                  [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:42,100] multiqc.modules.bamtools.bamtools                  [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:42,106] multiqc.modules.bismark.bismark                    [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:42,108] multiqc.modules.hicup.hicup                        [DEBUG  ]  Could not find any HiCUP data in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:42,111] multiqc.modules.salmon.salmon                      [DEBUG  ]  Could not find any Salmon data in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:42,136] multiqc.modules.kallisto.kallisto                  [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:42,294] multiqc.modules.slamdunk.slamdunk                  [DEBUG  ]  No slamdunk reports found.
+[2023-05-08 15:59:42,302] multiqc.modules.star.star                          [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:42,304] multiqc.modules.tophat.tophat                      [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:42,331] multiqc.modules.bowtie2.bowtie2                    [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:42,358] multiqc.modules.bowtie1.bowtie1                    [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:42,385] multiqc.modules.cutadapt.cutadapt                  [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:42,413] multiqc.modules.trimmomatic.trimmomatic            [DEBUG  ]  Could not find any Trimmomatic data in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:42,439] multiqc.modules.skewer.skewer                      [DEBUG  ]  Could not find any data in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:42,441] multiqc.modules.fastq_screen.fastq_screen          [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:48,691] multiqc.modules.fastqc.fastqc                      [INFO   ]  Found 30 reports
+[2023-05-08 15:59:50,027] multiqc.modules.clusterflow.clusterflow            [DEBUG  ]  Could not find any reports in ('/media/localuser/amp/Phyo/X204SC20063329-Z01-F001_02/raw/fastqcdata',)
+[2023-05-08 15:59:50,028] multiqc                                            [INFO   ]  Report      : fastqcdata/reads.html
+[2023-05-08 15:59:50,028] multiqc                                            [INFO   ]  Data        : fastqcdata/reads_data
+[2023-05-08 15:59:50,028] multiqc                                            [DEBUG  ]  Moving data file from '/tmp/tmpPze3mS/multiqc_data/multiqc_general_stats.txt' to 'fastqcdata/reads_data'
+[2023-05-08 15:59:50,028] multiqc                                            [DEBUG  ]  Moving data file from '/tmp/tmpPze3mS/multiqc_data/multiqc_fastqc.txt' to 'fastqcdata/reads_data'
+[2023-05-08 15:59:50,029] multiqc                                            [DEBUG  ]  Moving data file from '/tmp/tmpPze3mS/multiqc_data/multiqc_sources.txt' to 'fastqcdata/reads_data'
+[2023-05-08 15:59:50,067] multiqc                                            [INFO   ]  MultiQC complete
